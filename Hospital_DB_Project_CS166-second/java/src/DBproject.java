@@ -298,72 +298,153 @@ public class DBproject{
 	}//end readChoice
 
 	public static void AddDoctor(DBproject esql) {//1
-		int sid;
-		String name;
-		String specialty;
-		String hospital;
-		int did;
-		String query;
-		String docq;
-		String departq;
+		int docID;
+		String dname;
+		String special;
+		int depID;
+		String hospitalName;
+		int hosID;
+		String departmentName;
+		List<List<String>> result;
+		List<String> record;
 
-		//Get doctorid
+		//Create doctorID
 		do {
 			try {
-				docq = "SELECT * FROM Doctor;";
-				sid = esql.executeQuery(docq) + 1;
+				query = "SELECT COUNT(doctor_ID) FROM Doctor";
+				record = esql.executeQueryAndReturnResult(query).get(0);
+				docID = Integer.parseInt(record.get(0));
+				docID++;
 				break;
 			}catch (Exception e) {
-				System.out.println("Error creating doctor_ID.");
+				System.out.println(e.getMessage());
 				continue;
 			}
-		}while(true);
+		}while (true);
 
-		//Get name
+		//Get Doctor name
 		do {
 			System.out.print("Please enter the doctor's name: ");
 			try {
-				name = in.readLine();
+				dname = in.readLine();
 				break;
 			}catch (Exception e) {
-				System.out.println("Your input must be a string.");
+				System.out.println("The doctor's name must be a string.");
 				continue;
 			}
-		}while(true);
+		}while (true);
 
 		//Get specialty
-		do {
-			System.out.print("Please enter the doctor's specialty: ");
-			try {
-				specialty = in.readLine();
-				break;
-			}catch (Exception e) {
-				System.out.println("Your input must be a string.");
-				continue;
-			}
-		}while(true);
-
-		//Get did
-		do {
-			System.out.print("Please enter the name of hospital department the doctor works in: ");
-			try {
-				hospital = in.readLine();
-				departq = "SELECT * FROM Department;";
-				did = esql.executeQuery(departq) + 1;
-				break;
-			}catch (Exception e) {
-				System.out.println("Your input must be a string.");
-				continue;
-			}
-		}while(true);
-
+		System.out.println("========== Specialties ==========");
 		try {
-			query = "INSERT INTO Patient (doctor_ID, name, specialty, did) VALUES ";
-			query += String.format("('%2d', '%s', '%s', '%2d)", sid, name, specialty, did);
-			esql.executeUpdate(query);
+			query = "SELECT DISTINCT specialty FROM Doctor";
+			esql.executeQueryAndPrintResult(query);
 		}catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+		System.out.println("===================================");
+
+		do {
+			try {
+				System.out.print("Please enter a specialty: ");
+				special = in.readLine();
+
+				query = "SELECT * FROM Doctor WHERE LOWER(specialty) LIKE LOWER('%" + special + "%')";
+				result = esql.executeQueryAndReturnResult(query);
+
+				if (result.isEmpty()) {
+					System.out.println("Specialty not listed.");
+					continue;
+				}
+				break;
+			}catch(Exception e) {
+				System.out.println("Invalid input." + e.getMessage());
+				continue;
+			}
+		}while(true);
+
+		//Get hospital name
+		System.out.println("========== Hospital List ==========");
+		try {
+			query = "SELECT name FROM Hospital";
+			esql.executeQueryAndPrintResult(query);
+		}catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+		System.out.println("===================================");
+
+		do {
+			try {
+				System.out.print("Please enter the hospital name: ");
+				hospitalName = in.readLine();
+
+				query = "SELECT * FROM Hospital WHERE LOWER(name) LIKE LOWER('%" + hospitalName + "%')";
+				result = esql.executeQueryAndReturnResult(query);
+
+				if (result.isEmpty()) {
+					System.out.println("Did not find a hospital with that name.");
+					continue;
+				}
+
+				break;
+			}catch(Exception e) {
+				System.out.println("Invalid input." + e.getMessage());
+				continue;
+			}
+		}while(true);
+
+		//Get department name
+		System.out.println("========== Department List ==========");
+		try {
+			query = "SELECT name FROM Department WHERE hid = " + hosID;
+			esql.executeQueryAndPrintResult(query);
+		}catch(Exception e) {
+			System.out.println(e.getMessage());
+		}
+		System.out.println("=====================================");
+
+		do {
+			try {
+				System.out.print("Please enter a departnment name: ");
+				departmentName = in.readLine();
+				query = String.format("SELECT * FROM Department WHERE hid = %s AND LOWER(name) LIKE ", hosID);
+				query += "LOWER('%" + departmentName + "%')";
+
+				result = esql.executeQueryAndReturnResult(query);
+
+				if (result.isEmpty()) {
+					System.out.println("Department not found.");
+					continue;
+				}
+
+				break;
+			}catch(Exception e) {
+				System.out.println("Incorrect input. " + e.getMessage());
+				continue;
+			}
+		}while(true);
+
+		//Get department ID
+		try {
+			query = String.format("SELECT dept_ID FROM Department WHERE hid = %s AND LOWER(name) LIKE ", hosID);
+			query += "LOWER('%" + departmentName + "%')";
+			result = esql.executeQueryAndReturnResult(query);
+
+			record = result.get(0);
+			depID = Integer.parseInt(record.get(0));
+		}catch (Exception e) {
 			System.out.println("Insert Doctor Query Failed");
 		}
+
+		//Add doctor
+		try {
+			query = "INSERT INTO Doctor (doctor_ID, name, specialty, did) VALUES ";
+      query += String.format("('%2d', '%s', '%s', '%2d')", docID, dname, special, depID);
+      esql.executeUpdate(query);
+  	}catch(Exception e) {
+          System.out.println("Insert Doctor Query Failed");
+    }
+
 	}
 
 	public static void AddPatient(DBproject esql) {//2
@@ -446,14 +527,14 @@ public class DBproject{
 		int aid;
 		String date;
 		String time;
-		Sttring stat;
+		String stat;
 		String appq;
 		String query;
 
 		//get appointment ID
 		do {
 			try {
-				appq = "SELECT * FROM Appointment;"
+				appq = "SELECT * FROM Appointment;";
 				aid = esql.executeQuery(appq) + 1;
 				break;
 			}catch (Exception e) {
@@ -489,7 +570,7 @@ public class DBproject{
 		//get status
 		do {
 			try {
-				stat = 'AC';
+				stat = "AC";
 				break;
 			}catch (Exception e) {
 				System.out.println("Error creating appointment status.");
@@ -629,7 +710,7 @@ public class DBproject{
 				System.out.println("Your input must be a string.");
 				continue;
 			}
-		}
+		}while(true);
 
 		//Get second date
 		do {
